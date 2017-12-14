@@ -80,11 +80,24 @@ module.exports = async () => {
 
   app.use(cors());
 
-  app.use((req, res, next) => {
+  app.use(/\/products|orders|bills/, (req, res, next) => {
     res.set("Content-Type", "application/json");
     next();
   });
 
+  /**
+   * @swagger
+   * /products:
+   *   post:
+   *     tags:
+   *       - Products
+   *     description: Create a product
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       201:
+   *         description: Nothing
+   */
   app.post("/products", async (req, res) => {
     const { error } = Joi.validate(req.body, productSchema, {
       abortEarly: false
@@ -102,6 +115,19 @@ module.exports = async () => {
     res.status(201).send();
   });
 
+  /**
+   * @swagger
+   * /products:
+   *   get:
+   *     tags:
+   *       - Products
+   *     description: Returns all product
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: An array of products
+   */
   app.get("/products", async (req, res) => {
     let productList = await Product.findAll();
     const { sort } = req.query;
@@ -113,6 +139,19 @@ module.exports = async () => {
     res.status(200).send(productList);
   });
 
+  /**
+   * @swagger
+   * /products/:id:
+   *   get:
+   *     tags:
+   *       - Products
+   *     description: Get a single product
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: A single product
+   */
   app.get("/products/:id", async (req, res) => {
     const { id } = req.params;
     const product = await Product.findById(id);
@@ -120,12 +159,38 @@ module.exports = async () => {
     return res.status(200).send(product.toJSON());
   });
 
+  /**
+   * @swagger
+   * /products:
+   *   delete:
+   *     tags:
+   *       - Products
+   *     description: Delete all products
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       204:
+   *         description: Nothing
+   */
   app.delete("/products", async (req, res) => {
     const productList = await Product.findAll();
     productList.forEach(product => product.destroy());
     res.status(204).send();
   });
 
+  /**
+   * @swagger
+   * /orders:
+   *   post:
+   *     tags:
+   *       - Orders
+   *     description: Create an order
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       201:
+   *         description: Nothing
+   */
   app.post("/orders", async (req, res) => {
     const { error } = Joi.validate(req.body, orderSchema, {
       abortEarly: false
@@ -189,6 +254,19 @@ module.exports = async () => {
     res.status(201).send();
   });
 
+  /**
+   * @swagger
+   * /orders:
+   *   get:
+   *     tags:
+   *       - Orders
+   *     description: List all order
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: An array of orders
+   */
   app.get("/orders", async (req, res) => {
     let orderList = await Order.findAll();
     const { sort } = req.query;
@@ -200,6 +278,19 @@ module.exports = async () => {
     res.status(200).send(orderList);
   });
 
+  /**
+   * @swagger
+   * /orders/:id:
+   *   get:
+   *     tags:
+   *       - Orders
+   *     description: Get a single order
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: Nothing
+   */
   app.get("/orders/:id", async (req, res) => {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -207,12 +298,38 @@ module.exports = async () => {
     return res.status(200).send(order.toJSON());
   });
 
+  /**
+   * @swagger
+   * /orders:
+   *   delete:
+   *     tags:
+   *       - Orders
+   *     description: Delete all orders
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       204:
+   *         description: Nothing
+   */
   app.delete("/orders", async (req, res) => {
     const orderList = await Order.findAll();
     orderList.forEach(order => order.destroy());
     res.status(204).send();
   });
 
+  /**
+   * @swagger
+   * /orders/:id/status:
+   *   put:
+   *     tags:
+   *       - Orders
+   *     description: Change an order status
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: Nothing
+   */
   app.put("/orders/:id/status", async (req, res) => {
     const { id } = req.params;
     const order = await Order.findById(id);
@@ -232,16 +349,77 @@ module.exports = async () => {
     return res.status(200).send();
   });
 
+  /**
+   * @swagger
+   * /bills:
+   *   get:
+   *     tags:
+   *       - Bills
+   *     description: Returns all bills
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       200:
+   *         description: An array of bills
+   */
   app.get("/bills", async (req, res) => {
     let billList = await Bill.findAll();
     res.status(200).send(billList);
   });
 
+  /**
+   * @swagger
+   * /bills:
+   *   delete:
+   *     tags:
+   *       - Bills
+   *     description: Delete all bills
+   *     produces:
+   *       - application/json
+   *     responses:
+   *       204:
+   *         description: Nothing
+   */
   app.delete("/bills", async (req, res) => {
     const billList = await Bill.findAll();
     billList.forEach(bill => bill.destroy());
     res.status(204).send();
   });
+
+  const swaggerJSDoc = require("swagger-jsdoc");
+  const swaggerUi = require("swagger-ui-express");
+
+  // swagger definition
+  const swaggerDefinition = {
+    info: {
+      title: "Node Swagger API",
+      version: "1.0.0",
+      description: "Demonstrating how to describe a RESTful API with Swagger"
+    },
+    host:
+      env === "development"
+        ? "localhost:3000"
+        : "https://calm-plains-26467.herokuapp.com/",
+    basePath: "/"
+  };
+
+  // options for the swagger docs
+  const options = {
+    // import swaggerDefinitions
+    swaggerDefinition: swaggerDefinition,
+    // path to the API docs
+    apis: ["./index.js"]
+  };
+
+  // initialize swagger-jsdoc
+  const swaggerSpec = swaggerJSDoc(options);
+
+  app.get("/swagger.json", function(req, res) {
+    res.setHeader("Content-Type", "application/json");
+    res.send(swaggerSpec);
+  });
+
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   return app;
 };
